@@ -6,6 +6,8 @@ from multiprocessing import Pool
 
 from src.text_preprocessor import EnglishPreprocessor
 from src.NNMF import SimpleNMF
+# from src.custom_nmf.nmf import NMF
+from src.custom_nmf.gpt_nmf import OptimizedNMF
 
 class NNMFPipelineEnglish:
     def __init__(self, documents_list, tf_idf_max_df=1.0, tf_idf_min_df=1,
@@ -45,10 +47,10 @@ class NNMFPipelineEnglish:
     
     def train_nmf(self, tfidf_documents):
         if self.random_state != -1:
-            self.model = NMF(n_components=self.n_components,
-                                max_iter=self.max_iter, init='random', random_state=self.random_state)
+            self.model = OptimizedNMF(n_components=self.n_components,
+                                max_iter=self.max_iter, init='random', random_seed=self.random_state)
         else:
-            self.model = NMF(n_components=self.n_components,
+            self.model = OptimizedNMF(n_components=self.n_components,
                                 max_iter=self.max_iter,init='random')
 
         self.model.fit_transform(tfidf_documents)
