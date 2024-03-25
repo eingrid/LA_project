@@ -32,19 +32,22 @@ def tokenize_ngrams(document, n_g):
 
 class UkrainianPreprocessor:
     def preprocess_documents(self, documents_list: list,
-                             filter_by_pos: list = [], return_strings: bool = True,
+                             filter_by_pos: list = [], lemmatize: bool = True,
+                             return_strings: bool = True,
                              verbose: int = 0):
         preprocessed_documents = []
         for i_d, doc in enumerate(documents_list):
             preprocessed_documents.append(self.preprocess(doc,
                                                           filter_by_pos=filter_by_pos,
+                                                          lemmatize=lemmatize,
                                                           return_string=return_strings))
             if (verbose == 1) and ((i_d == 0) or ((i_d + 1)%100 == 0)):
                 print(f'--Preprocessed documents: {i_d+1}/{len(documents_list)}')
         return preprocessed_documents
     
     # Function to preprocess documents
-    def preprocess(self, document, filter_by_pos: list = [], return_string: bool = True):
+    def preprocess(self, document, filter_by_pos: list = [],
+                   lemmatize: bool = True, return_string: bool = True):
         # Clean the document
         document = self.remove_links_content(document)
         document = self.remove_emails(document)
@@ -56,10 +59,10 @@ class UkrainianPreprocessor:
         # Tokenize and lemmatize
         processed_document = stanza_pip(document.lower())
         if len(filter_by_pos) > 0:
-            lemmatized_words = [word.lemma for sent in processed_document.sentences for word in sent.words if (
+            lemmatized_words = [(word.lemma if lemmatize else word.text) for sent in processed_document.sentences for word in sent.words if (
                 word.upos in filter_by_pos)]
         else:
-            lemmatized_words = [word.lemma for sent in processed_document.sentences for word in sent.words]
+            lemmatized_words = [(word.lemma if lemmatize else word.text) for sent in processed_document.sentences for word in sent.words]
         # Remove stopwords and punctuations
         filtered_words = [word for word in lemmatized_words if word.isalnum() and not word in stop_words]
         if return_string:
@@ -94,11 +97,13 @@ class LSAPipelineUkrainian:
     def __init__(self, documents_list, tf_idf_max_df=1.0, tf_idf_min_df=1,
                  lsa_components: int = 100, svd_n_iter: int = 5,
                  n_top_words: int = 10, ngram_range: tuple = (1, 1),
-                 filter_by_pos: list = [], random_state: int = -1,
-                 import_preprocessed_documents: bool = False, verbose: int = 0):
+                 filter_by_pos: list = [], lemmatize: bool = True,
+                 random_state: int = -1, import_preprocessed_documents: bool = False,
+                 verbose: int = 0):
         if not import_preprocessed_documents:
             self.import_documents_list = UkrainianPreprocessor().preprocess_documents(documents_list,
                                                                                       filter_by_pos=filter_by_pos,
+                                                                                      lemmatize=lemmatize,
                                                                                       verbose=verbose)
         else:
             self.import_documents_list = documents_list
